@@ -1,5 +1,6 @@
 package com.opendatasoft.elasticsearch.odsscript;
 
+import com.opendatasoft.elasticsearch.plugin.geo.GeoPluginUtils;
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.script.ExecutableScript;
@@ -28,7 +29,15 @@ public class OdsScriptFactory implements NativeScriptFactory {
             throw new ElasticsearchIllegalArgumentException("'zoom' parameter is mandatory");
         }
 
-        double tolerance = 360 / (256 * Math.pow(zoom, 3));
+        Double lat = (Double) params.get("lat");
+
+        if (lat == null) {
+            lat = 0.0;
+        }
+
+        double meterByPixel = GeoPluginUtils.getMeterByPixel(zoom, lat);
+
+        double tolerance = GeoPluginUtils.getDecimalDegreeFromMeter(meterByPixel * 1, lat);
 
         int nbDecimals = 20;
 
