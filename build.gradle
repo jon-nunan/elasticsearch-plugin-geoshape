@@ -47,3 +47,7 @@ noticeFile = rootProject.file('README.md')
 dependencyLicenses.enabled = false
 
 thirdPartyAudit.enabled = true
+
+forbiddenApisTest.enabled = false
+forbiddenApisMain.enabled = false
+

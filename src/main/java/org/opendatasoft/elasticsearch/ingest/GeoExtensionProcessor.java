@@ -27,8 +27,10 @@ import org.opendatasoft.elasticsearch.plugin.GeoUtils;
 
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.ingest.IngestDocument.deepCopyMap;
 
 
 public class GeoExtensionProcessor extends AbstractProcessor {
@@ -122,10 +123,41 @@ public class GeoExtensionProcessor extends AbstractProcessor {
         return new_geo_map;
     }
 
+    private static Object deepCopy(Object value) {
+        if (value instanceof Map) {
+            Map<?, ?> mapValue = (Map<?, ?>) value;
+            Map<Object, Object> copy = new HashMap<>(mapValue.size());
+            for (Map.Entry<?, ?> entry : mapValue.entrySet()) {
+                copy.put(entry.getKey(), deepCopy(entry.getValue()));
+            }
+            return copy;
+        } else if (value instanceof List) {
+            List<?> listValue = (List<?>) value;
+            List<Object> copy = new ArrayList<>(listValue.size());
+            for (Object itemValue : listValue) {
+                copy.add(deepCopy(itemValue));
+            }
+            return copy;
+        } else if (value instanceof byte[]) {
+            byte[] bytes = (byte[]) value;
+            return Arrays.copyOf(bytes, bytes.length);
+        } else if (value == null || value instanceof String || value instanceof Integer ||
+                value instanceof Long || value instanceof Float ||
+                value instanceof Double || value instanceof Boolean ||
+                value instanceof ZonedDateTime) {
+            return value;
+        } else if (value instanceof Date) {
+            return ((Date) value).clone();
+        } else {
+            throw new IllegalArgumentException("unexpected value type [" + value.getClass() + "]");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void setAndcleanGeoSourceField(IngestDocument document, String cur_geo_source_fullpath, Map<String, Object> geo_map) {
         /* We need to move geo_shape fields (type, coordinates, etc.) to one lower level under geoshape_x.geo_shape. */
 
-        Map<String, Object> tmp_geo_map = deepCopyMap(geo_map);
+        Map<String, Object> tmp_geo_map = (Map<String, Object>) deepCopy(geo_map);
         for (Map.Entry<String, Object> geo_shape_field : tmp_geo_map.entrySet()) {
             document.removeField(cur_geo_source_fullpath + "." + geo_shape_field.getKey());
         }
