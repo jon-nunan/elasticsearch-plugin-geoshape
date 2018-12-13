@@ -156,7 +156,7 @@ public class GeoExtensionProcessor extends AbstractProcessor {
 
     @SuppressWarnings("unchecked")
     @Override
-    public IngestDocument execute(IngestDocument ingestDocument) throws IOException {
+    public void execute(IngestDocument ingestDocument) throws IOException {
         ArrayList<String> geo_objects_list = getGeoShapeFieldsFromDoc(ingestDocument);
         for (String cur_geo_source_field : geo_objects_list) {
             String cur_geo_source_fullpath;
@@ -205,7 +205,6 @@ public class GeoExtensionProcessor extends AbstractProcessor {
                         GeoUtils.getBboxFromCoords(coords));
             }
         }
-        return ingestDocument;
     }
 
     @Override
